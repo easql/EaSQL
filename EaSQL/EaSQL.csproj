@@ -4,6 +4,20 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Title>EaSQL</Title>
+    <Description>Provides a simple way to perform database queries using C# interpolated strings. It also offers a way to easily map the query result to model types.</Description>
+    <Copyright>MIT License</Copyright>
+    <PackageProjectUrl>https://github.com/easql/EaSQL</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/easql/EaSQL</RepositoryUrl>
+    <PackageTags>database; db; sql; mapping; query; datareader</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>
