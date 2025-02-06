@@ -3,7 +3,7 @@ run-name: Build EaSQL library
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - '.gitea/workflows/trigger/build'
 
