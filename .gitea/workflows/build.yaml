@@ -1,6 +1,11 @@
 ﻿name: Build Library
 run-name: Build EaSQL library
-on: workflow_dispatch
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.gitea/workflows/trigger/build'
 
 jobs:
   Explore-Gitea-Actions:
