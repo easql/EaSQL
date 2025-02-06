@@ -11,7 +11,6 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/easql/EaSQL</RepositoryUrl>
     <PackageTags>database; db; sql; mapping; query; datareader</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageVersion>1.0.1</PackageVersion>
   </PropertyGroup>
