@@ -6,15 +6,22 @@
     <Nullable>enable</Nullable>
     <Title>EaSQL</Title>
     <Description>Provides a simple way to perform database queries using C# interpolated strings. It also offers a way to easily map the query result to model types.</Description>
-    <Copyright>MIT License</Copyright>
+    <Copyright>@EaSQL 2025</Copyright>
     <PackageProjectUrl>https://github.com/easql/EaSQL</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/easql/EaSQL</RepositoryUrl>
     <PackageTags>database; db; sql; mapping; query; datareader</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageVersion>1.0.1</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\LICENSE">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
