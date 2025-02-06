@@ -1,5 +1,6 @@
 ﻿name: Build Library
 run-name: Build EaSQL library
+on: workflow_dispatch
 
 jobs:
   Explore-Gitea-Actions:
