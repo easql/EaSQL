@@ -13,7 +13,7 @@ namespace EaSQL.Query
         private readonly IDbCommand _command = commandProvider.CreateCommand();
         private int _paramCount = 0;
 
-        public void AppendLiteral(string s)
+        public readonly void AppendLiteral(string s)
         {
             _builder.Append(s);
         }
