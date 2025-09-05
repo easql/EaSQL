@@ -25,8 +25,10 @@ namespace EaSQL.Mapping
         /// <returns>This instance of the mapper to enable chaining of mapping definitions</returns>
         public Mapper<TType> DefineMapping<TProperty>(
             Expression<Func<TType, TProperty>> propertySelector,
-            string columnName)
+            string? columnName = null)
         {
+            columnName ??= GetPropertyName(propertySelector);
+
             Expression<Func<TType, IDataReader, TProperty>> rewritten =
                 Rewrite(propertySelector, columnName);
 
@@ -101,6 +103,12 @@ namespace EaSQL.Mapping
             }
 
             return memberInfo;
+        }
+
+        private string GetPropertyName<TProperty>(Expression<Func<TType, TProperty>> propertySelector)
+        {
+            MemberExpression propertyAccess = (MemberExpression)propertySelector.Body;
+            return propertyAccess.Member.Name;
         }
 
         public TType ApplyMapping(TType target, IDataReader reader)

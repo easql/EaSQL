@@ -12,7 +12,7 @@
     <RepositoryUrl>https://github.com/easql/EaSQL</RepositoryUrl>
     <PackageTags>database; db; sql; mapping; query; datareader</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageVersion>1.2.0</PackageVersion>
+    <PackageVersion>1.2.1</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
