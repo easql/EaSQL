@@ -8,7 +8,7 @@ namespace EaSQL.Mapping
     /// Type for mapping values from a data reader to a data object.
     /// </summary>
     /// <typeparam name="TType">Type of the data object.</typeparam>
-    public sealed class Mapper<TType>
+    public sealed class Mapper<TType> where TType : new()
     {
         private static readonly Type _dataRecordType = typeof(IDataRecord);
         private static readonly Type _dataReaderType = typeof(IDataReader);
@@ -108,6 +108,14 @@ namespace EaSQL.Mapping
             _mappingFunctions.ForEach(f => f.Apply(target, reader));
 
             return target;
+        }
+
+        public IEnumerable<TType> ApplyAll(IDataReader reader)
+        {
+            while (reader.Read())
+            {
+                yield return ApplyMapping(new(), reader);
+            }
         }
     }
 }
