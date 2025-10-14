@@ -14,7 +14,7 @@ namespace EaSQL.Query
             return interpolatedQuery.GetCommand();
         }
 
-        public IDbCommand CreateCommand()
+        IDbCommand ICommandProvider.CreateCommand()
         {
             return _connection.CreateCommand();
         }

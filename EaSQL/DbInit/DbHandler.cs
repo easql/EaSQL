@@ -3,10 +3,17 @@ using System.Data;
 
 namespace EaSQL.DbInit
 {
+    /// <summary>
+    /// Allows a simple method to manage database versions.
+    /// </summary>
     public class DbHandler : IVersionSetup
     {
         private readonly Dictionary<long, List<string>> _setupSteps = [];
 
+        /// <summary>
+        /// Defines a new version for the database.
+        /// </summary>
+        /// <returns>An instance allowing to define setup steps for this version.</returns>
         public IVersionSetup NewVersion()
         {
             _setupSteps.Add(_setupSteps.Count + 1, []);
@@ -19,6 +26,11 @@ namespace EaSQL.DbInit
             return this;
         }
 
+        /// <summary>
+        /// Sets up the database. It will check the current version of the database and 
+        /// will apply all steps to upgrade to the latest version, if necessary.
+        /// </summary>
+        /// <param name="connection">Database connection to use.</param>
         public void Setup(IDbConnection connection)
         {
             long currentVersion = 0;
