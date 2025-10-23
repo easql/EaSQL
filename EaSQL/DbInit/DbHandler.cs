@@ -8,7 +8,7 @@ namespace EaSQL.DbInit
     /// </summary>
     public class DbHandler : IVersionSetup
     {
-        private readonly Dictionary<long, List<string>> _setupSteps = [];
+        private readonly Dictionary<long, List<Step>> _setupSteps = [];
 
         /// <summary>
         /// Defines a new version for the database.
@@ -22,7 +22,13 @@ namespace EaSQL.DbInit
 
         IVersionSetup IVersionSetup.AddStep(string command)
         {
-            _setupSteps[_setupSteps.Count].Add(command);
+            _setupSteps[_setupSteps.Count].Add(new() { Command = command });
+            return this;
+        }
+
+        IVersionSetup IVersionSetup.AddStepUnless(string command, string executionPrevention)
+        {
+            _setupSteps[_setupSteps.Count].Add(new() { Command = command, GuardQuery = executionPrevention });
             return this;
         }
 
@@ -54,14 +60,24 @@ namespace EaSQL.DbInit
             }
 
             SqlQueryHandler handler = new(connection);
-            foreach ((long version, List<string> steps) in _setupSteps)
+            foreach ((long version, List<Step> steps) in _setupSteps)
             {
                 if (version <= currentVersion) continue;
 
-                foreach(string step in steps)
+                foreach(Step step in steps)
                 {
+                    if (!string.IsNullOrEmpty(step.GuardQuery))
+                    {
+                        using IDbCommand guardCommand = connection.CreateCommand();
+                        guardCommand.CommandText = step.GuardQuery;
+                        if (guardCommand.ExecuteReader().Read())
+                        {
+                            continue;
+                        }
+                    }
+
                     using IDbCommand executeStep = connection.CreateCommand();
-                    executeStep.CommandText = step;
+                    executeStep.CommandText = step.Command;
                     executeStep.ExecuteNonQuery();
                 }
 
