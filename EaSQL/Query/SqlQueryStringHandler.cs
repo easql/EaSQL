@@ -18,6 +18,7 @@ namespace EaSQL.Query
         /// <param name="literalLength">Number of characters in the given sting, not counting given interpolation parameters.</param>
         /// <param name="formattedCount">Number of given interpolation parameters in the given string.</param>
         /// <param name="commandProvider">A provider to create a new command.</param>
+        [Obsolete("Use IDbConnection extension method instead!")]
         public SqlQueryStringHandler(int literalLength, int formattedCount, ICommandProvider commandProvider)
         {
             _builder = new(literalLength + ((3 + (formattedCount/10)) * formattedCount));

@@ -59,7 +59,6 @@ namespace EaSQL.DbInit
                 }
             }
 
-            SqlQueryHandler handler = new(connection);
             foreach ((long version, List<Step> steps) in _setupSteps)
             {
                 if (version <= currentVersion) continue;
@@ -81,7 +80,7 @@ namespace EaSQL.DbInit
                     executeStep.ExecuteNonQuery();
                 }
 
-                handler.CreateCommand($"update __version__ set current_version = {version}").ExecuteNonQuery();
+                connection.RunCommand($"update __version__ set current_version = {version}");
             }
         }
 

@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace EaSQL.Query
 {
+    [Obsolete("Use IDbConnection extension method instead!")]
     public sealed class SqlQueryHandler(IDbConnection connection) : ICommandProvider
     {
         private readonly IDbConnection _connection = connection;

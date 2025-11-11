@@ -5,6 +5,7 @@ namespace EaSQL.Query
     /// <summary>
     /// Internal interface to provide the <see cref="SqlQueryStringHandler"/> with a database command.
     /// </summary>
+    [Obsolete("Use IDbConnection extension method instead!")]
     public interface ICommandProvider
     {
         /// <summary>

@@ -5,15 +5,18 @@ EaSQL (/ˈiː.siːkwəl/) provides some quality of life functions that will make
 It allows to perform SQL queries like this:
 
 ```
-IDbConnection dbConnection = /* obtain database connection */
-SqlQueryHandler queryHandler = new(dbConnection);
-
+using IDbConnection dbConnection = /* obtain database connection */
 int id = 42;
 
-IDbCommand command = queryHandler.CreateCommand($"select * from users where user_id = {id}");
+using IDataReader reader = dbConnection.RunQuery($"select * from users where user_id = {id}");
 ```
 
+There are different extension methods for different scenarios:
 The created command instance will contain the query string with all used parameters from the string as SQL parameters.
+
+- `RunQuery`: allows to run a query against the database
+- `RunCommand`: allows to run a single command (e.g. stored procedure call, update) against the database
+- `GetSingleValue`: allows to run a query against the database that expects to return only a single result (e.g. count queries)
 
 It also allows to define mappings between a data reader to a model type:
 
