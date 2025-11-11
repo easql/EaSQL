@@ -8,7 +8,22 @@ namespace EaSQL.Mapping
     /// Type for mapping values from a data reader to a data object.
     /// </summary>
     /// <typeparam name="TType">Type of the data object.</typeparam>
-    public sealed class Mapper<TType> where TType : new()
+    /// <example>
+    /// public class User
+    /// {
+    ///	    public int Id { get; set; }
+    ///     public string Name { get; set; }
+    /// }
+    ///
+    /// Mapper{User} mapper = new()
+    ///     .DefineMapping(u => u.Id, "id")
+    ///     .DefineMapping(u => u.Name, "user_name");
+    ///
+    /// IDataReader reader = // perform database query
+    ///
+    /// User user = mapper.ApplyMapping(new(), reader);
+    /// </example>
+public sealed class Mapper<TType> where TType : new()
     {
         private static readonly Type _dataRecordType = typeof(IDataRecord);
         private static readonly Type _dataReaderType = typeof(IDataReader);
@@ -21,7 +36,7 @@ namespace EaSQL.Mapping
         /// </summary>
         /// <typeparam name="TProperty">Type of the mapped property in the data type <typeparamref name="TType"/></typeparam>
         /// <param name="propertySelector">Expression pointing to the property to map</param>
-        /// <param name="columnName">Name of the database column to map</param>
+        /// <param name="columnName">Name of the database column to map. If <c>null</c>, the property's name from the <paramref name="propertySelector"/> is used.</param>
         /// <returns>This instance of the mapper to enable chaining of mapping definitions</returns>
         public Mapper<TType> DefineMapping<TProperty>(
             Expression<Func<TType, TProperty>> propertySelector,
@@ -105,12 +120,19 @@ namespace EaSQL.Mapping
             return memberInfo;
         }
 
-        private string GetPropertyName<TProperty>(Expression<Func<TType, TProperty>> propertySelector)
+        private static string GetPropertyName<TProperty>(Expression<Func<TType, TProperty>> propertySelector)
         {
             MemberExpression propertyAccess = (MemberExpression)propertySelector.Body;
             return propertyAccess.Member.Name;
         }
 
+        /// <summary>
+        /// Applies all defined mappings to an instance of <typeparamref name="TType"/> reading values
+        /// from the current row the given <paramref name="reader"/> is positioned.
+        /// </summary>
+        /// <param name="target"><typeparamref name="TType"/> instance to apply the mapping to.</param>
+        /// <param name="reader">Database reader to read the values from.</param>
+        /// <returns>The same instance given as <paramref name="target"/> to allow method chaining.</returns>
         public TType ApplyMapping(TType target, IDataReader reader)
         {
             _mappingFunctions.ForEach(f => f.Apply(target, reader));
@@ -118,6 +140,11 @@ namespace EaSQL.Mapping
             return target;
         }
 
+        /// <summary>
+        /// Applies the defined mappings to instances of <typeparamref name="TType"/>.
+        /// </summary>
+        /// <param name="reader">Database reader to read data from.</param>
+        /// <returns>An enumerable with newly created and mapped instances of <typeparamref name="TType"/>.</returns>
         public IEnumerable<TType> ApplyAll(IDataReader reader)
         {
             while (reader.Read())

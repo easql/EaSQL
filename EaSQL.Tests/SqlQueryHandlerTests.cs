@@ -27,5 +27,13 @@ namespace EaSQL.Tests
                 p => { Assert.Equal("@p0", p.ParameterName); Assert.Equal(11, p.Value); },
                 p => { Assert.Equal("@p1", p.ParameterName); Assert.Equal("someName", p.Value); });
         }
+
+        [Fact]
+        public void CreateCommand_ItRunsQueryWithExtensionMethod()
+        {
+            IDataReader reader = _connection.RunQuery($"select * from table where id = {11} and name = {"someName"}");
+
+            Assert.NotNull(reader);
+        }
     }
 }

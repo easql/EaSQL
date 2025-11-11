@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace EaSQL.Query
 {
+    [Obsolete("Use IDbConnection extension method instead!")]
     public sealed class SqlQueryHandler(IDbConnection connection) : ICommandProvider
     {
         private readonly IDbConnection _connection = connection;
@@ -14,7 +15,7 @@ namespace EaSQL.Query
             return interpolatedQuery.GetCommand();
         }
 
-        public IDbCommand CreateCommand()
+        IDbCommand ICommandProvider.CreateCommand()
         {
             return _connection.CreateCommand();
         }
