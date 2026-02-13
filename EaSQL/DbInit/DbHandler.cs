@@ -1,5 +1,6 @@
 ﻿using EaSQL.Query;
 using System.Data;
+using System.Data.Common;
 
 namespace EaSQL.DbInit
 {
@@ -9,14 +10,31 @@ namespace EaSQL.DbInit
     public class DbHandler : IVersionSetup
     {
         private readonly Dictionary<long, List<Step>> _setupSteps = [];
+        private readonly List<Version> _versions = [];
 
         /// <summary>
         /// Defines a new version for the database.
         /// </summary>
         /// <returns>An instance allowing to define setup steps for this version.</returns>
+        [Obsolete("Use AddVersion instead")]
         public IVersionSetup NewVersion()
         {
             _setupSteps.Add(_setupSteps.Count + 1, []);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a new database version.
+        /// </summary>
+        /// <param name="versionSetup">Operations to be performed in this version.</param>
+        /// <returns>This instance to allow method chaining</returns>
+        public DbHandler AddVersion(Action<VersionSetup> versionSetup)
+        {
+            Version version = new(_versions.Count + 1);
+            _versions.Add(version);
+            VersionSetup setup = new(version);
+            versionSetup(setup);
+
             return this;
         }
 
@@ -37,17 +55,18 @@ namespace EaSQL.DbInit
         /// will apply all steps to upgrade to the latest version, if necessary.
         /// </summary>
         /// <param name="connection">Database connection to use.</param>
-        public void Setup(IDbConnection connection)
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task Setup(DbConnection connection, CancellationToken cancellationToken = default)
         {
             long currentVersion = 0;
 
-            using (IDbCommand getVersion = connection.CreateCommand())
+            await using (DbCommand getVersion = connection.CreateCommand())
             {
                 getVersion.CommandText = "select current_version from __version__";
 
                 try
                 {
-                    object? getVersionResult = getVersion.ExecuteScalar();
+                    object? getVersionResult = await getVersion.ExecuteScalarAsync(cancellationToken);
                     if (getVersionResult is long dbVersion)
                     {
                         currentVersion = dbVersion;
@@ -55,46 +74,65 @@ namespace EaSQL.DbInit
                 }
                 catch
                 {
-                    CreateVersionTable(connection);
+                    await CreateVersionTable(connection, cancellationToken);
                 }
             }
 
-            foreach ((long version, List<Step> steps) in _setupSteps)
+            if (_versions.Count > 0)
             {
-                if (version <= currentVersion) continue;
-
-                foreach(Step step in steps)
+                long deployedVersion = currentVersion;
+                foreach (Version version in _versions
+                             .Where(v => v.VersionNumber > currentVersion)
+                             .OrderBy(v => v.VersionNumber))
                 {
-                    if (!string.IsNullOrEmpty(step.GuardQuery))
+                    foreach (IOperation operation in version.Operations)
                     {
-                        using IDbCommand guardCommand = connection.CreateCommand();
-                        guardCommand.CommandText = step.GuardQuery;
-                        if (guardCommand.ExecuteReader().Read())
-                        {
-                            continue;
-                        }
+                        await operation.Execute(connection, cancellationToken);
                     }
 
-                    using IDbCommand executeStep = connection.CreateCommand();
-                    executeStep.CommandText = step.Command;
-                    executeStep.ExecuteNonQuery();
+                    deployedVersion = version.VersionNumber;
                 }
+                await connection.RunCommandAsync($"update __version__ set current_version = {deployedVersion}", cancellationToken);
+            }
+            else
+            {
+                foreach ((long version, List<Step> steps) in _setupSteps)
+                {
+                    if (version <= currentVersion) continue;
 
-                connection.RunCommand($"update __version__ set current_version = {version}");
+                    foreach (Step step in steps)
+                    {
+                        if (!string.IsNullOrEmpty(step.GuardQuery))
+                        {
+                            using IDbCommand guardCommand = connection.CreateCommand();
+                            guardCommand.CommandText = step.GuardQuery;
+                            if (guardCommand.ExecuteReader().Read())
+                            {
+                                continue;
+                            }
+                        }
+
+                        await using DbCommand executeStep = connection.CreateCommand();
+                        executeStep.CommandText = step.Command;
+                        await executeStep.ExecuteNonQueryAsync(cancellationToken);
+                    }
+
+                    await connection.RunCommandAsync($"update __version__ set current_version = {version}", cancellationToken);
+                }
             }
         }
 
-        private static void CreateVersionTable(IDbConnection connection)
+        private static async Task CreateVersionTable(DbConnection connection, CancellationToken cancellationToken)
         {
-            using (IDbCommand createVersionTable = connection.CreateCommand())
+            await using (DbCommand createVersionTable = connection.CreateCommand())
             {
                 createVersionTable.CommandText = "create table __version__ (current_version int not null);";
-                createVersionTable.ExecuteNonQuery();
+                await createVersionTable.ExecuteNonQueryAsync(cancellationToken);
             }
-            
-            using IDbCommand insertVersion = connection.CreateCommand();
+
+            await using DbCommand insertVersion = connection.CreateCommand();
             insertVersion.CommandText = "insert into __version__ (current_version) values (0);";
-            insertVersion.ExecuteNonQuery();
+            await insertVersion.ExecuteNonQueryAsync(cancellationToken);
         }
     }
 }

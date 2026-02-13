@@ -2,6 +2,7 @@
 
 EaSQL (/ˈiː.siːkwəl/) provides some quality of life functions that will make a developer's life easier when working with SQL queries.
 
+## Running queries
 It allows to perform SQL queries like this:
 
 ```
@@ -18,6 +19,7 @@ The created command instance will contain the query string with all used paramet
 - `RunCommand`: allows to run a single command (e.g. stored procedure call, update) against the database
 - `GetSingleValue`: allows to run a query against the database that expects to return only a single result (e.g. count queries)
 
+## Mapping entities
 It also allows to define mappings between a data reader to a model type:
 
 ```
@@ -34,4 +36,57 @@ Mapper<User> mapper = new()
 IDataReader reader = // perform database query
 
 User user = mapper.ApplyMapping(new(), reader);
+```
+
+## Creating databases
+EaSQL offers a rudimentary way to define and create database tables:
+
+``` 
+using SqliteConnection connection = new("Data Source=:memory:");
+connection.Open();
+
+DbHandler handler = new();
+
+handler
+    .AddVersion(s =>
+    {
+        s.AddTable("test", t =>
+        {
+            t.AddColumn("id", c =>
+            {
+                c.HasType(ColumnType.Int).IsNotNull().AsPrimaryKey();
+            });
+            t.AddColumn("value", c =>
+            {
+                c.HasType(ColumnType.Varchar).WithLength(50);
+            });
+        });
+        s.AddTable("test2", t =>
+        {
+            t.AddColumn("id", c =>
+            {
+                c.HasType(ColumnType.Int).IsNotNull().AsPrimaryKey();
+            });
+            t.AddColumn("value", c =>
+            {
+                c.HasType(ColumnType.Varchar).WithLength(50).IsNotNull();
+            });
+        });
+    })
+    .AddVersion(s =>
+    {
+        s.AddTable("test3", t =>
+        {
+            t.AddColumn("id", c =>
+            {
+                c.HasType(ColumnType.Int).IsNotNull().AsPrimaryKey();
+            });
+            t.AddColumn("value", c =>
+            {
+                c.HasType(ColumnType.Varchar).WithLength(50);
+            });
+        });
+    });
+
+handler.Setup(connection);
 ```

@@ -6,13 +6,13 @@ namespace EaSQL.Tests
     public class DbHandlerTests
     {
         [Fact]
-        public void Setup_ItInitializesTheDatabase()
+        public async Task Setup_ItInitializesTheDatabase()
         {
-            using SqliteConnection connection = new("Data Source=:memory:");
+            await using SqliteConnection connection = new("Data Source=:memory:");
             connection.Open();
 
             DbHandler handler = new();
-            handler.Setup(connection);
+            await handler.Setup(connection);
 
             long version = (long)new SqliteCommand("select current_version from __version__", connection).ExecuteScalar()!;
 
@@ -66,6 +66,72 @@ namespace EaSQL.Tests
             long version = (long)new SqliteCommand("select current_version from __version__", connection).ExecuteScalar()!;
 
             Assert.Equal(3, version);
+        }
+
+        [Fact]
+        public async Task Setup_CreatesANewDatabaseWithVersions()
+        {
+            await using SqliteConnection connection = new("Data Source=:memory:");
+            connection.Open();
+
+            DbHandler handler = new();
+
+            handler
+                .AddVersion(s =>
+                {
+                    s.AddTable("test", t =>
+                    {
+                        t.AddColumn("id", c =>
+                        {
+                            c.HasType(ColumnType.Int)
+                                .IsNotNull()
+                                .AsPrimaryKey();
+                        });
+                        t.AddColumn("value", c =>
+                        {
+                            c.HasType(ColumnType.Varchar)
+                                .WithLength(50);
+                        });
+                    });
+                    s.AddTable("test2", t =>
+                    {
+                        t.AddColumn("id", c =>
+                        {
+                            c.HasType(ColumnType.Int)
+                                .IsNotNull()
+                                .AsPrimaryKey();
+                        });
+                        t.AddColumn("value", c =>
+                        {
+                            c.HasType(ColumnType.Varchar)
+                                .WithLength(50)
+                                .IsNotNull();
+                        });
+                    });
+                })
+                .AddVersion(s =>
+                {
+                    s.AddTable("test3", t =>
+                    {
+                        t.AddColumn("id", c =>
+                        {
+                            c.HasType(ColumnType.Int)
+                                .IsNotNull()
+                                .AsPrimaryKey();
+                        });
+                        t.AddColumn("value", c =>
+                        {
+                            c.HasType(ColumnType.Varchar)
+                                .WithLength(50);
+                        });
+                    });
+                });
+
+            await handler.Setup(connection);
+
+            long version = (long)new SqliteCommand("select current_version from __version__", connection).ExecuteScalar()!;
+
+            Assert.Equal(2, version);
         }
     }
 }

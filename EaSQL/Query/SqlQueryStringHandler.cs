@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Data.Common;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -12,23 +13,13 @@ namespace EaSQL.Query
     public ref struct SqlQueryStringHandler
     {
         private readonly StringBuilder _builder;
-        private readonly IDbCommand _command;
+        private readonly DbCommand _command;
         private int _paramCount = 0;
 
         /// <param name="literalLength">Number of characters in the given sting, not counting given interpolation parameters.</param>
         /// <param name="formattedCount">Number of given interpolation parameters in the given string.</param>
-        /// <param name="commandProvider">A provider to create a new command.</param>
-        [Obsolete("Use IDbConnection extension method instead!")]
-        public SqlQueryStringHandler(int literalLength, int formattedCount, ICommandProvider commandProvider)
-        {
-            _builder = new(literalLength + ((3 + (formattedCount/10)) * formattedCount));
-            _command = commandProvider.CreateCommand();
-        }
-
-        /// <param name="literalLength">Number of characters in the given sting, not counting given interpolation parameters.</param>
-        /// <param name="formattedCount">Number of given interpolation parameters in the given string.</param>
         /// <param name="connection">DB connection to run the command on.</param>
-        public SqlQueryStringHandler(int literalLength, int formattedCount, IDbConnection connection)
+        public SqlQueryStringHandler(int literalLength, int formattedCount, DbConnection connection)
         {
             _builder = new(literalLength + ((3 + (formattedCount / 10)) * formattedCount));
             _command = connection.CreateCommand();
@@ -53,13 +44,13 @@ namespace EaSQL.Query
             string argumentName = $"@p{_paramCount++}";
             _builder.Append(argumentName);
 
-            IDbDataParameter param = _command.CreateParameter();
+            DbParameter param = _command.CreateParameter();
             param.ParameterName = argumentName;
             param.Value = value;
             _command.Parameters.Add(param);
         }
 
-        internal readonly IDbCommand GetCommand()
+        internal readonly DbCommand GetCommand()
         {
             _command.CommandText = _builder.ToString();
 
