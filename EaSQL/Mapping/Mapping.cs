@@ -1,13 +1,14 @@
 ﻿using System.Data;
+using System.Data.Common;
 
 namespace EaSQL.Mapping
 {
-    internal sealed class Mapping<TType, TProperty>(Func<TType, IDataReader, TProperty> mappingFunction) :
+    internal sealed class Mapping<TType, TProperty>(Func<TType, DbDataReader, TProperty> mappingFunction) :
         IMapping<TType>
     {
-        private readonly Func<TType, IDataReader, TProperty> _mappingFunction = mappingFunction;
+        private readonly Func<TType, DbDataReader, TProperty> _mappingFunction = mappingFunction;
 
-        public void Apply(TType target, IDataReader reader)
+        public void Apply(TType target, DbDataReader reader)
         {
             _mappingFunction(target, reader);
         }

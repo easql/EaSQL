@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Data.Common;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -23,11 +24,12 @@ namespace EaSQL.Mapping
     ///
     /// User user = mapper.ApplyMapping(new(), reader);
     /// </example>
-public sealed class Mapper<TType> where TType : new()
+    public sealed class Mapper<TType> where TType : new()
     {
-        private static readonly Type _dataRecordType = typeof(IDataRecord);
-        private static readonly Type _dataReaderType = typeof(IDataReader);
-        private static readonly MethodInfo _getOrdinalInfo = typeof(IDataRecord).GetMethod("GetOrdinal")!;
+        private static readonly Type DataRecordType = typeof(IDataRecord);
+        private static readonly Type DataReaderType = typeof(DbDataReader);
+        private static readonly MethodInfo GetOrdinalInfo = typeof(IDataRecord).GetMethod("GetOrdinal")!;
+
         private readonly Dictionary<Type, MethodInfo> _memberCache = [];
         private readonly List<IMapping<TType>> _mappingFunctions = [];
 
@@ -44,7 +46,7 @@ public sealed class Mapper<TType> where TType : new()
         {
             columnName ??= GetPropertyName(propertySelector);
 
-            Expression<Func<TType, IDataReader, TProperty>> rewritten =
+            Expression<Func<TType, DbDataReader, TProperty>> rewritten =
                 Rewrite(propertySelector, columnName);
 
             _mappingFunctions.Add(new Mapping<TType, TProperty>(rewritten.Compile()));
@@ -66,7 +68,7 @@ public sealed class Mapper<TType> where TType : new()
             string columnName,
             Expression<Func<TColumn, TProperty>> conversion)
         {
-            Expression<Func<TType, IDataReader, TProperty>> rewritten =
+            Expression<Func<TType, DbDataReader, TProperty>> rewritten =
                 Rewrite(propertySelector, columnName, conversion);
 
             _mappingFunctions.Add(new Mapping<TType, TProperty>(rewritten.Compile()));
@@ -74,46 +76,50 @@ public sealed class Mapper<TType> where TType : new()
             return this;
         }
 
-        private Expression<Func<TType, IDataReader, TProperty>> Rewrite<TProperty>(
+        private Expression<Func<TType, DbDataReader, TProperty>> Rewrite<TProperty>(
             Expression<Func<TType, TProperty>> propertySelector,
             string columnName)
         {
             return Rewrite<TProperty, object>(propertySelector, columnName, null);
         }
 
-        private Expression<Func<TType, IDataReader, TProperty>> Rewrite<TProperty, TColumn>(
-            Expression<Func<TType, TProperty>> propertySelector, 
+        private Expression<Func<TType, DbDataReader, TProperty>> Rewrite<TProperty, TColumn>(
+            Expression<Func<TType, TProperty>> propertySelector,
             string columnName,
             Expression<Func<TColumn, TProperty>>? conversion)
         {
             ParameterExpression targetParameter = propertySelector.Parameters.Single();
-            ParameterExpression readerParameter = Expression.Parameter(_dataReaderType);
+            ParameterExpression readerParameter = Expression.Parameter(DataReaderType);
 
             MemberExpression propertyAccess = (MemberExpression)propertySelector.Body;
-            MethodCallExpression getOrdinal = Expression.Call(readerParameter, _getOrdinalInfo, Expression.Constant(columnName));
+            MethodCallExpression getOrdinal =
+                Expression.Call(readerParameter, GetOrdinalInfo, Expression.Constant(columnName));
             MethodCallExpression readCall = Expression.Call(
                 readerParameter,
-                GetRetrieverFor(conversion?.Parameters[0].Type ?? propertyAccess.Type), 
+                GetRetrieverFor(conversion?.Parameters[0].Type ?? propertyAccess.Type),
                 getOrdinal);
             InvocationExpression? convertCall = null;
             if (conversion != null)
             {
                 convertCall = Expression.Invoke(conversion, readCall);
             }
+
             BinaryExpression assignment = Expression.Assign(propertyAccess, convertCall ?? (Expression)readCall);
 
-            return (Expression<Func<TType, IDataReader, TProperty>>)Expression.Lambda(assignment, targetParameter, readerParameter);
+            return (Expression<Func<TType, DbDataReader, TProperty>>)Expression.Lambda(assignment, targetParameter,
+                readerParameter);
         }
 
         private MethodInfo GetRetrieverFor(Type columnType)
         {
             if (!_memberCache.TryGetValue(columnType, out MethodInfo? memberInfo))
             {
-                memberInfo = _dataRecordType.GetMethod($"Get{columnType.Name}");
+                memberInfo = DataRecordType.GetMethod($"Get{columnType.Name}");
                 if (memberInfo == null)
                 {
                     throw new InvalidOperationException();
                 }
+
                 _memberCache.Add(columnType, memberInfo);
             }
 
@@ -133,7 +139,7 @@ public sealed class Mapper<TType> where TType : new()
         /// <param name="target"><typeparamref name="TType"/> instance to apply the mapping to.</param>
         /// <param name="reader">Database reader to read the values from.</param>
         /// <returns>The same instance given as <paramref name="target"/> to allow method chaining.</returns>
-        public TType ApplyMapping(TType target, IDataReader reader)
+        public TType ApplyMapping(TType target, DbDataReader reader)
         {
             _mappingFunctions.ForEach(f => f.Apply(target, reader));
 
@@ -145,7 +151,7 @@ public sealed class Mapper<TType> where TType : new()
         /// </summary>
         /// <param name="reader">Database reader to read data from.</param>
         /// <returns>An enumerable with newly created and mapped instances of <typeparamref name="TType"/>.</returns>
-        public IEnumerable<TType> ApplyAll(IDataReader reader)
+        public IEnumerable<TType> ApplyAll(DbDataReader reader)
         {
             while (reader.Read())
             {

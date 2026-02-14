@@ -85,7 +85,7 @@ namespace EaSQL.Query
         /// <param name="stringHandler">The query to execute</param>
         /// <param name="cancellationToken">Optional cancellation token</param>
         /// <returns>An IDataReader with the query result(s)</returns>
-        public static Task<IDataReader> RunQueryAsync(
+        public static Task<DbDataReader> RunQueryAsync(
             this DbConnection connection,
             [InterpolatedStringHandlerArgument(nameof(connection))]
             SqlQueryStringHandler stringHandler,
@@ -96,7 +96,7 @@ namespace EaSQL.Query
             return InternalRunQueryAsync(connection, command, cancellationToken);
         }
 
-        private static async Task<IDataReader> InternalRunQueryAsync(
+        private static async Task<DbDataReader> InternalRunQueryAsync(
             DbConnection connection, 
             DbCommand command,
             CancellationToken cancellationToken)

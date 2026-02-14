@@ -49,15 +49,19 @@ internal sealed class Column(string name)
         {
             sb.Append(" PRIMARY KEY");
         }
-
-        if (Reference is not null)
-        {
-            sb.Append(" REFERENCES ")
-                .Append(Reference.Table)
-                .Append('.')
-                .Append(Reference.Column);
-        }
         
         sb.Append(',');
+    }
+
+    public void AddForeignKeyReference(StringBuilder sb)
+    {
+        if (Reference == null) return;
+        
+        sb.Append("FOREIGN KEY (")
+            .Append(Name).Append(") REFERENCES ")
+            .Append(Reference.Table)
+            .Append('(')
+            .Append(Reference.Column)
+            .Append(')');
     }
 }

@@ -11,7 +11,7 @@
     <RepositoryUrl>https://github.com/easql/EaSQL</RepositoryUrl>
     <PackageTags>database; db; sql; mapping; query; datareader</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageVersion>1.4.4</PackageVersion>
+    <PackageVersion>1.4.5</PackageVersion>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
     <LangVersion>14</LangVersion>
